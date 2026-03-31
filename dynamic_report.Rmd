@@ -1,0 +1,108 @@
+---
+title: My dynamic report
+output: html_fragment
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE, message=FALSE, warning=FALSE, error=FALSE)
+
+# Load the package
+library(tidyverse)
+```
+
+```{r}
+logged_data <- read_csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vQrNunzhP5CZfWI6cKoZlIcAcCDivqJsC3pkOkbH42sezDUYQzhS3dNAW-SdcBfsntPn8ejqgFdjCk5/pub?output=csv")
+
+# 1. Rename the variables
+latest_data <- logged_data %>%
+  rename(
+    timestamp = 1,
+    platform = 2,
+    duration_sec = 4,
+    ad_content = 6
+  ) %>%
+  # Drop all other columns
+  select(timestamp, platform, duration_sec, ad_content)
+
+# 2. Summary Statistics
+total_ads <- latest_data %>% 
+  nrow()
+
+avg_duration <- latest_data$duration_sec %>% 
+  mean(na.rm = TRUE) %>% 
+  round(1)
+
+longest_ad <- latest_data$duration_sec %>% 
+  max(na.rm = TRUE)
+```
+
+
+```{css}
+body {
+  font-family: Arial, sans-serif;
+  line-height: 1.6;
+  color: black;
+}
+
+h2 {
+  color: black;
+  border-bottom: 2px solid blue;
+  padding-bottom: 5px;
+}
+
+blockquote {
+  background-color: white;
+  padding: 15px;
+  border-left: 4px solid blue;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+```
+
+## Analysis of Targeted Ads
+
+This dynamic report tracks and visualises targeted advertisements observed across different digital platforms over a recent period. It specifically focuses on identifying the distribution of these ads by platform and understanding their varying durations.
+
+> Based on a total of **`r total_ads`** observational logs, the average ad duration encountered was **`r avg_duration`** seconds, and the longest ad observed lasted for **`r longest_ad`** seconds.
+
+```{r chart1, fig.align='center'}
+# Chart 1: Ads Logged by Platform
+latest_data %>%
+  ggplot() +
+  geom_bar(aes(x = platform, fill = platform)) +
+  scale_y_continuous(breaks = function(x) seq(0, max(x), by = 1)) +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 20)) +
+  labs(
+    title = "Targeted Ads Logged by Platform",
+    x = "Platform",
+    y = "Number of Ads",
+    caption = "Source: STATS 220 Logging"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    plot.caption = element_text(size = 8, face = "italic", color = "gray50")
+  )
+```
+
+---
+
+```{r chart2, fig.align='center'}
+# Chart 2: Average duration per platform
+latest_data %>%
+  ggplot(aes(x = platform, y = duration_sec, fill = platform)) +
+  stat_summary(fun = "mean", geom = "bar") + 
+  scale_y_continuous(breaks = function(x) seq(0, max(x), by = 5)) +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 20)) +
+  labs(
+    title = "Average Ad Duration by Platform",
+    y = "Seconds",
+    x = "Platform",
+    caption = "Source: STATS 220 Logging"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    plot.caption = element_text(size = 8, face = "italic", color = "gray50")
+  )
+```
